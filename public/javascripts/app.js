@@ -87,19 +87,15 @@ function pollInfo() {
       } else if(info_call) {
         window.setTimeout(pollInfo,1000);
       } else {
-        $('.message h1').html('Prices (info unavailable)');
+        $('.message h1').html('Prices');
       }
     }
   });
 }
 function process_Info(info) {
   console.info(info);
-  var content = [];
-  if(info.book_name != undefined)
-    content.push('<h3>' + info.book_name + '</h3>');
-  if(info.author_name != undefined)
-    content.push('<h4> by ' + info.author_name + '</h4>');
+  $("#book_name").html(info.book_name);
+  $("#author_name").html("by " + info.author_name);
   if(info.image_url != undefined)
-    content.push('<img src="' + info.image_url + '"></img>');
-  $('.book_info').html(content.join(""));
+    $("#book_img").attr('src', info.image_url);
 }
