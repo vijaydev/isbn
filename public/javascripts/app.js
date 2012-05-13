@@ -93,6 +93,13 @@ function pollInfo() {
   });
 }
 function process_Info(info) {
-  var content = ['<h3>', info.book_name, '</h3>', '<h3>', info.author_name, '</h3>', '<img src="', info.image_url, '"></img>'].join("");
-  $('.book_info').html(content);
+  console.info(info);
+  var content = [];
+  if(info.book_name != undefined)
+    content.push('<h3>' + info.book_name + '</h3>');
+  if(info.author_name != undefined)
+    content.push('<h4> by ' + info.author_name + '</h4>');
+  if(info.image_url != undefined)
+    content.push('<img src="' + info.image_url + '"></img>');
+  $('.book_info').html(content.join(""));
 }
