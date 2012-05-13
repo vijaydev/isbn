@@ -28,7 +28,6 @@ this._chain)}});j(["concat","join","slice"],function(a){var b=k[a];m.prototype[a
 var callRemote = true;
 var currentStores = 0;
 var prices = {};
-
 function poll() {
   jQuery.ajax({
     data: ({isbn: isbn, stores: currentStores}), dataType: 'json',
@@ -65,4 +64,35 @@ function process(prices) {
     $('<li><span class="store"><a href="'+v.url+'" target="_blank">'+v.store+'</a></span><span class="price">'+price+'</span></li>').appendTo('#prices ul');
   });
   currentStores = _.size(prices);
+}
+
+var info_call = true;
+function pollInfo() {
+  jQuery.ajax({
+    data: ({isbn: isbn}), dataType: 'json',
+    type: 'get', url:'/poll_info',
+    timeout: 60000,
+    cache: false,
+    error:function(request, textStatus, errorThrown){
+      if(textStatus == 'timeout' && info_call) {
+        window.setTimeout(pollInfo,1000);
+      } else {
+        $('#error').show();
+      }
+    },
+    success: function(data){
+      if(data.status == 'complete') {
+        info_call = false;
+        process_Info(data.info);
+      } else if(info_call) {
+        window.setTimeout(pollInfo,1000);
+      } else {
+        $('.message h1').html('Prices (info unavailable)');
+      }
+    }
+  });
+}
+function process_Info(info) {
+  var content = ['<h3>', info.book_name, '</h3>', '<h3>', info.author_name, '</h3>', '<img src="', info.image_url, '"></img>'].join("");
+  $('.book_info').html(content);
 }

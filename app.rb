@@ -28,6 +28,29 @@ class ISBN < Goliath::API
   end
 end
 
+class PollInfo < Goliath::API
+  use Goliath::Rack::DefaultMimeType
+  use Goliath::Rack::Render, 'json'
+  use Goliath::Rack::Params
+
+  def process_request
+    i = 0
+    # not idiomatic but much simpler to handle in js
+    # than streaming
+    book = Book.new(params[:isbn], config['redis'])
+    while i < 50
+      info = book.info_available
+      break if info[:status] != 'fetching'
+      i += 1
+      EM::Synchrony.sleep(1)
+    end
+    info
+  end
+
+  def response(env)
+    [200, {}, process_request]
+  end
+end
 class Poll < Goliath::API
   use Goliath::Rack::DefaultMimeType
   use Goliath::Rack::Render, 'json'
@@ -69,4 +92,5 @@ class App < Goliath::API
   get '/', Home
   map '/isbn/:isbn/price/', ISBN
   map '/poll', Poll
+  map '/poll_info', PollInfo
 end

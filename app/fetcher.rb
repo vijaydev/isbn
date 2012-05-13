@@ -17,7 +17,7 @@ class Fetcher
         agent.follow_meta_refresh = true
       }
       page = agent.get(url)
-      price = Store.parse_price(page.search(store[:pattern]).text)
+      price = Store.parse_price(page.search(store[:price]).text)
     rescue
       price = nil
     end

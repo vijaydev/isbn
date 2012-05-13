@@ -1,5 +1,4 @@
 class Book < Struct.new(:isbn, :redis)
-
   class << self
     def is_isbn?(text)
       text = text.strip.gsub('-','').upcase if text
@@ -27,7 +26,7 @@ class Book < Struct.new(:isbn, :redis)
     end
   end
 
-  %w(info status num_stores).each do |attr|
+  %w(status num_stores).each do |attr|
     define_method attr do
       redis.hget key, attr
     end
@@ -59,6 +58,18 @@ class Book < Struct.new(:isbn, :redis)
     {status: status, prices: prices}
   end
 
+  def cache_info(info)
+    redis.set info_key, info.to_json
+    # cache for 7 days
+    redis.expire info_key, 86400 * 7
+  end
+
+  def info_available
+    book_info = redis.get(info_key)
+    status = book_info.nil? ? 'fetching' : 'complete'
+    { status: status, info: MultiJson.load(book_info) }
+  end
+
   def delete_prices
     redis.del(prices_key)
   end
@@ -76,9 +87,16 @@ class Book < Struct.new(:isbn, :redis)
     # we have to manually insert into queue instead of using Sidekiq
     # because Sidekiq won't be able to deal with async redis being used
     # by goliath
-    redis.sadd 'isbn:queues', 'fetch'
+    %w(fetch info).each do |q_name|
+      redis.sadd 'isbn:queues', q_name
+    end
     Store::STORES.keys.each do |store_name|
       redis.rpush('isbn:queue:fetch', {class: 'Fetcher', args: [isbn.to_s, store_name.to_s]}.to_json)
+    end
+
+    info = redis.get(info_key)
+    unless info
+      redis.rpush('isbn:queue:info', {class: 'InfoFetcher', args: [isbn.to_s]}.to_json)
     end
   end
 
@@ -88,9 +106,11 @@ class Book < Struct.new(:isbn, :redis)
     redis.respond_to?(:namespace) ? isbn : "isbn:#{isbn}"
   end
 
-
   def prices_key
     key + ':prices'
   end
 
+  def info_key
+    key + ':info'
+  end
 end
