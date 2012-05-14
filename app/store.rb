@@ -1,31 +1,31 @@
 require 'multi_json'
 class Store
-  INFO_STORE = :flipkart
+  INFO_STORES = { flipkart: { url: 'http://www.flipkart.com/search.php?query=[isbn]', book_name: 'div.mprod-summary-title h1', author_name: 'div.mprod-summary-title h2', image_url: '#mprodimg-id img' } }
+
   STORES = {flipkart: {
               url: 'http://www.flipkart.com/search.php?query=[isbn]',
-              price: 'span#fk-mprod-our-id',
-              book_name: 'div.mprod-summary-title h1', author_name: 'div.mprod-summary-title h2', image_url: '#mprodimg-id img' },
+              pattern: 'span#fk-mprod-our-id' },
             infibeam: {
               url: 'http://www.infibeam.com/Books/search?q=[isbn]',
-              price: '#infiPrice'},
+              pattern: '#infiPrice'},
             indiaplaza: {
               url: 'http://www.indiaplaza.com/searchproducts.aspx?sn=books&q=[isbn]',
-              price: 'div.ourPrice'},
+              pattern: 'div.ourPrice'},
             crossword: {
               url: 'http://www.crossword.in/books/search?q=[isbn]',
-              price: '.variant-final-price'},
+              pattern: '.variant-final-price'},
             rediff: {
               url: 'http://books.rediff.com/book/ISBN:[isbn]',
-              price: 'font#book-pric b'},
+              pattern: 'font#book-pric b'},
             indiaplaza: {
               url: 'http://www.indiaplaza.com/searchproducts.aspx?sn=books&q=[isbn]',
-              price: 'div.ourPrice'},
+              pattern: 'div.ourPrice'},
             landmark: {
               url: 'http://www.landmarkonthenet.com/product/SearchPaging.aspx?code=[isbn]&type=0&num=0',
-              price: '.price .current-price'},
+              pattern: '.price .current-price'},
             homeshop18: {
               url: 'http://www.homeshop18.com/search:[isbn]/',
-              price: '.pdp_details_price .pdp_details_hs18Price'}
+              pattern: '.pdp_details_price .pdp_details_hs18Price'}
            }
 
   class << self

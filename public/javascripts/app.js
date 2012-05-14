@@ -44,9 +44,9 @@ function poll() {
     success: function(data){
       if(data.status == 'complete') {
         callRemote = false;
-        process(data.prices);
+        process(data);
       } else if(data.status == 'progress') {
-        process(data.prices);
+        process(data);
       }
       if(callRemote) {
         window.setTimeout(poll,100)
@@ -57,7 +57,9 @@ function poll() {
   });
 }
 
-function process(prices) {
+function process(data) {
+  process_Info(data.info);
+  var prices = data.prices;
   $('#prices ul').html('<li class="header"><span class="store">Store</span><span class="price">Price</span></li>');
   $.each(prices, function(k,v) {
     var price = v.price ? 'Rs. ' + v.price : 'Unavailable';
@@ -66,36 +68,11 @@ function process(prices) {
   currentStores = _.size(prices);
 }
 
-var info_call = true;
-function pollInfo() {
-  jQuery.ajax({
-    data: ({isbn: isbn}), dataType: 'json',
-    type: 'get', url:'/poll_info',
-    timeout: 60000,
-    cache: false,
-    error:function(request, textStatus, errorThrown){
-      if(textStatus == 'timeout' && info_call) {
-        window.setTimeout(pollInfo,1000);
-      } else {
-        $('#error').show();
-      }
-    },
-    success: function(data){
-      if(data.status == 'complete') {
-        info_call = false;
-        process_Info(data.info);
-      } else if(info_call) {
-        window.setTimeout(pollInfo,1000);
-      } else {
-        $('.message h1').html('Prices');
-      }
-    }
-  });
-}
 function process_Info(info) {
-  console.info(info);
-  $("#book_name").html(info.book_name);
-  $("#author_name").html("by " + info.author_name);
-  if(info.image_url != undefined)
-    $("#book_img").attr('src', info.image_url);
+  if(info != null) {
+    $("#book_name").html(info.book_name);
+    $("#author_name").html("by " + info.author_name);
+    if(info.image_url != undefined)
+      $("#book_img").attr('src', info.image_url);
+  }
 }

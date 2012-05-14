@@ -26,7 +26,7 @@ class Book < Struct.new(:isbn, :redis)
     end
   end
 
-  %w(status num_stores).each do |attr|
+  %w(info status num_stores).each do |attr|
     define_method attr do
       redis.hget key, attr
     end
@@ -45,29 +45,22 @@ class Book < Struct.new(:isbn, :redis)
     end
   end
 
+  def cache_info(book_info)
+    self.info = book_info.to_json
+  end
+
   def num_prices
     redis.scard(prices_key)
   end
 
   def prices(current_stores=0)
+    book_info = MultiJson.load(self.info) if self.info
     prices = redis.smembers(prices_key)
     # hack. if the price is nil, give sort a large number so it ranks in the bottom.
     prices = prices.map {|p| MultiJson.load p}.sort_by {|v| v['price'] || 999999999999}
     fetched_stores = prices.size
     status = fetched_stores == Store.num_stores ? 'complete' : (fetched_stores == current_stores ? 'fetching' : 'progress')
-    {status: status, prices: prices}
-  end
-
-  def cache_info(info)
-    redis.set info_key, info.to_json
-    # cache for 7 days
-    redis.expire info_key, 86400 * 7
-  end
-
-  def info_available
-    book_info = redis.get(info_key)
-    status = book_info.nil? ? 'fetching' : 'complete'
-    { status: status, info: MultiJson.load(book_info) }
+    {status: status, prices: prices, info: book_info }
   end
 
   def delete_prices
@@ -82,6 +75,7 @@ class Book < Struct.new(:isbn, :redis)
 
     self.status = 'fetching'
     self.num_stores = Store.num_stores
+
     delete_prices
 
     # we have to manually insert into queue instead of using Sidekiq
@@ -94,8 +88,7 @@ class Book < Struct.new(:isbn, :redis)
       redis.rpush('isbn:queue:fetch', {class: 'Fetcher', args: [isbn.to_s, store_name.to_s]}.to_json)
     end
 
-    info = redis.get(info_key)
-    unless info
+    unless self.info
       redis.rpush('isbn:queue:info', {class: 'InfoFetcher', args: [isbn.to_s]}.to_json)
     end
   end
@@ -108,9 +101,5 @@ class Book < Struct.new(:isbn, :redis)
 
   def prices_key
     key + ':prices'
-  end
-
-  def info_key
-    key + ':info'
   end
 end

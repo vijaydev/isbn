@@ -3,7 +3,7 @@ class InfoFetcher
   sidekiq_options queue: :info, timeout: 15
 
   def perform(isbn)
-    store = Store::STORES[Store::INFO_STORE]
+    store = Store::INFO_STORES[:flipkart]
     url = store[:url].gsub('[isbn]',isbn.to_s)
     info = {}
 
